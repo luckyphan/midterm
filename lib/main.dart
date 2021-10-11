@@ -29,7 +29,7 @@ class _AppState extends State<App> {
             if (snapshot.hasError) {
               return SomethingWentWrong();
             } else if (snapshot.connectionState == ConnectionState.done) {
-              return Splash2();
+              return Splasher();
             } else {
               return Container(color: Colors.yellow);
             }
@@ -51,7 +51,7 @@ class SomethingWentWrong extends StatelessWidget {
   }
 }
 
-class Splash2 extends StatelessWidget {
+class Splasher extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SplashScreen(

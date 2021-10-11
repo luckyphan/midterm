@@ -17,7 +17,9 @@ class LoginPage extends StatefulWidget {
 class _LoginState extends State<LoginPage> {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _emailController, _passwordController, _phoneNumberController;
+  late TextEditingController _emailController,
+      _passwordController,
+      _phoneNumberController;
 
   get model => null;
 
@@ -44,7 +46,6 @@ class _LoginState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-
     final emailInput = TextFormField(
       autocorrect: false,
       controller: _emailController,
@@ -96,7 +97,8 @@ class _LoginState extends State<LoginPage> {
 
           setState(() {
             _loading = true;
-            Authenticate().signInWithEmailAndPassword(_email, _password, context);
+            Authenticate()
+                .signInWithEmailAndPassword(_email, _password, context);
           });
         }
       },
@@ -107,55 +109,66 @@ class _LoginState extends State<LoginPage> {
         width: 250.0,
         child: OutlinedButton(
           onPressed: () {
-            Navigator.push(
-                context, MaterialPageRoute(builder: (con) => const RegisterPage()));
+            Navigator.push(context,
+                MaterialPageRoute(builder: (con) => const RegisterPage()));
           },
           child: const Text('Register'),
-    ));
+        ));
 
     final justEmail = Container(
         width: 250.0,
         child: OutlinedButton(
-          onPressed:(){
+          onPressed: () {
             Navigator.push(
-                context,MaterialPageRoute(builder: (con) => OnlyEmail()));
-          }, child:Text("Sign In With Only Email"),
-    ));
+                context, MaterialPageRoute(builder: (con) => OnlyEmail()));
+          },
+          child: Text("Sign In With Only Email"),
+        ));
 
     final google = Container(
-      width: 250.0,
-      child : OutlinedButton.icon(
-        icon: Image.asset('assets/googleicon.png', height: 20, width: 20,),
-        label: const Text("Sign in With Google"),
-        onPressed: (){
-          Authenticate().googleSignIn(context);
-        } ));
+        width: 250.0,
+        child: OutlinedButton.icon(
+            icon: Image.asset(
+              'assets/googleicon.png',
+              height: 20,
+              width: 20,
+            ),
+            label: const Text("Sign in With Google"),
+            onPressed: () {
+              Authenticate().googleSignIn(context);
+            }));
 
     final facebook = Container(
         width: 250.0,
         child: OutlinedButton.icon(
-        icon: Image.asset('assets/facebook.png', height: 20, width: 20,),
-        label: const Text("Sign in With Facebook"),
-        onPressed: (){
-          Authenticate().facebookSignIn(context);
-        } ));
+            icon: Image.asset(
+              'assets/facebook.png',
+              height: 20,
+              width: 20,
+            ),
+            label: const Text("Sign in With Facebook"),
+            onPressed: () {
+              Authenticate().facebookSignIn(context);
+            }));
 
     final phone = Container(
         width: 250.0,
         child: OutlinedButton(
-        onPressed:(){
-          Navigator.push(
-              context,MaterialPageRoute(builder: (con) => const PhoneSignIn()));},
-        child: Text("Sign in with Phone Number"),
-    ));
+          onPressed: () {
+            Navigator.push(context,
+                MaterialPageRoute(builder: (con) => const PhoneSignIn()));
+          },
+          child: Text("Sign in with Phone Number"),
+        ));
 
     final anon = Container(
-      width: 250.0,
-      child: OutlinedButton(
-        onPressed: (){
-          Authenticate().anonSignIn(context);},
-        child:Text("Sign in Anonymously"),
-    ));
+        width: 250.0,
+        child: OutlinedButton(
+          onPressed: () {
+            Authenticate().anonSignIn(context);
+          },
+          child: Text("Sign in Anonymously"),
+        ));
 
     return Scaffold(
       backgroundColor: Colors.blue.shade100,
