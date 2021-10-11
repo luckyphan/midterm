@@ -1,4 +1,4 @@
-import 'package:midterm/home_view.dart';
+import 'package:midterm/Screens/home_view.dart';
 import 'driver.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -15,21 +15,21 @@ class Authenticate {
   String _verificationId = '';
 
   @override
-  authorize(){
+  authorize() {
     return _auth;
   }
 
-  authorizedUser(){
+  authorizedUser() {
     return _auth.currentUser;
   }
 
-  user(){
-    User? user =_auth.currentUser;
+  user() {
+    User? user = _auth.currentUser;
     String id = user!.uid;
     return id;
   }
 
-  void anonSignIn(context) async{
+  void anonSignIn(context) async {
     _auth.signInAnonymously().then((result) {
       final User? user = result.user;
     });
@@ -37,38 +37,38 @@ class Authenticate {
         context, MaterialPageRoute(builder: (con) => AppDriver()));
   }
 
-  void signInWithEmailAndPassword(_email, _password, context) async{
+  void signInWithEmailAndPassword(_email, _password, context) async {
     await Firebase.initializeApp();
-    try{
+    try {
       UserCredential uid = await _auth.signInWithEmailAndPassword(
-          email: _email,
-          password: _password);
-      Navigator.push(context,MaterialPageRoute(builder:  (context) => AppDriver()));
-    }on FirebaseAuthException catch(e) {
+          email: _email, password: _password);
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => AppDriver()));
+    } on FirebaseAuthException catch (e) {
       ScaffoldMessenger.of(context).clearSnackBars();
       if (e.code == 'wrong-password') {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Wrong password")));
-      }else if(e.code =='user-not-found')    {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("User not found")));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Wrong password")));
+      } else if (e.code == 'user-not-found') {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("User not found")));
       }
-    }catch (e){
+    } catch (e) {
       print(e);
     }
   }
 
-  void signInOnlyEmail(_email) async{
-      await _auth.sendSignInLinkToEmail(
-        email: _email,
-        actionCodeSettings: ActionCodeSettings(
-            url: "https://fhossain6-midterm.firebaseapp.com",
-            androidPackageName: "com.example.midterm",
-            iOSBundleId: "com.example.midterm",
-            handleCodeInApp: true,
-            androidMinimumVersion: "16",
-            androidInstallApp: true),
-      );
+  void signInOnlyEmail(_email) async {
+    await _auth.sendSignInLinkToEmail(
+      email: _email,
+      actionCodeSettings: ActionCodeSettings(
+          url: "https://fhossain6-midterm.firebaseapp.com",
+          androidPackageName: "com.example.midterm",
+          iOSBundleId: "com.example.midterm",
+          handleCodeInApp: true,
+          androidMinimumVersion: "16",
+          androidInstallApp: true),
+    );
   }
 
   handleLink(Uri link, _email, context) async {
@@ -76,29 +76,30 @@ class Authenticate {
       final user = (await _auth.signInWithEmailLink(
         email: _email,
         emailLink: link.toString(),
-      )).user;
+      ))
+          .user;
       if (user != null) {
         return true;
       } else {
         return false;
       }
-    }else {
+    } else {
       return false;
     }
   }
 
-  Future<void> phoneSignIn(_phoneNumber, context) async{
+  Future<void> phoneSignIn(_phoneNumber, context) async {
     PhoneVerificationCompleted verificationCompleted =
         (PhoneAuthCredential phoneAuthCredential) async {
-      await _auth.signInWithCredential(phoneAuthCredential); };
+      await _auth.signInWithCredential(phoneAuthCredential);
+    };
 
     PhoneVerificationFailed verificationFailed =
         (FirebaseAuthException authException) {
       print("Failed: $authException");
     };
 
-    PhoneCodeSent codeSent =
-        (String verificationId, [int? resendToken]) async {
+    PhoneCodeSent codeSent = (String verificationId, [int? resendToken]) async {
       _verificationId = verificationId;
     };
 
@@ -112,7 +113,7 @@ class Authenticate {
     );
   }
 
-  void signInPhone(_sms, context) async{
+  void signInPhone(_sms, context) async {
     try {
       final AuthCredential credential = PhoneAuthProvider.credential(
         verificationId: _verificationId,
@@ -120,17 +121,20 @@ class Authenticate {
       );
       print(credential);
       final User? user = (await _auth.signInWithCredential(credential)).user;
-      Navigator.push(context,MaterialPageRoute(builder:  (context) => HomePage()));
+      Navigator.push(
+          context, MaterialPageRoute(builder: (context) => HomePage()));
     } catch (e) {
       print(e);
     }
-    Navigator.push(context,MaterialPageRoute(builder:  (context) => HomePage()));
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => HomePage()));
   }
 
-  void googleSignIn(context) async{
+  void googleSignIn(context) async {
     final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
-    final GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser!.authentication;
 
     final credential = GoogleAuthProvider.credential(
       accessToken: googleAuth.accessToken,
@@ -143,20 +147,20 @@ class Authenticate {
         .where('first_name', isEqualTo: googleUser.displayName)
         .limit(1)
         .get();
-    final List <DocumentSnapshot> docs = result.docs;
+    final List<DocumentSnapshot> docs = result.docs;
     if (docs.isEmpty) {
       try {
         _db
             .collection("user")
             .doc()
             .set({
-          "first_name": googleUser.displayName,
-          "last_name": '',
-          "role": 'customer',
-          "url": '',
-          "uid" : credential,
-          "registration_deadline": DateTime.now(),
-        })
+              "first_name": googleUser.displayName,
+              "last_name": '',
+              "role": 'customer',
+              "url": '',
+              "uid": credential,
+              "registration_deadline": DateTime.now(),
+            })
             .then((value) => null)
             .onError((error, stackTrace) => null);
         Navigator.pushReplacement(
@@ -173,20 +177,20 @@ class Authenticate {
     }
   }
 
-  void facebookSignIn(context) async{
+  void facebookSignIn(context) async {
     final LoginResult fbUser = await FacebookAuth.instance.login();
     final AuthCredential facebookCredential =
-    FacebookAuthProvider.credential(fbUser.accessToken!.token);
+        FacebookAuthProvider.credential(fbUser.accessToken!.token);
 
-    final userCredential =
-    await _auth.signInWithCredential(facebookCredential);
+    final userCredential = await _auth.signInWithCredential(facebookCredential);
 
     Navigator.pushReplacement(
         context, MaterialPageRoute(builder: (con) => AppDriver()));
   }
 
   void signOut(BuildContext context) async {
-    return showDialog(context: context,
+    return showDialog(
+        context: context,
         builder: (context) {
           return AlertDialog(
             title: Text("Log Out"),
@@ -195,11 +199,10 @@ class Authenticate {
               TextButton(
                 onPressed: () async {
                   await _auth.signOut();
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(
+                  ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('User logged out.')));
-                  Navigator.pushReplacement(
-                      context, MaterialPageRoute(builder: (con) => AppDriver()));
+                  Navigator.pushReplacement(context,
+                      MaterialPageRoute(builder: (con) => AppDriver()));
                   ScaffoldMessenger.of(context).clearSnackBars();
                 },
                 child: Text("Yes"),

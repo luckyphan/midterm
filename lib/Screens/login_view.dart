@@ -1,12 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'phone.dart';
-import 'authenticate.dart';
-import 'driver.dart';
-import 'email_only.dart';
-import 'register.dart';
+import '../phone.dart';
+import '../authenticate.dart';
+import '../driver.dart';
+import '../email_only.dart';
+import 'register_view.dart';
 import 'package:flutter/material.dart';
-import 'loading.dart';
+import '../loading.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);

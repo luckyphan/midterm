@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'authenticate.dart';
-import 'driver.dart';
+import '../authenticate.dart';
+import '../driver.dart';
 import 'dart:io';
 import 'home_view.dart';
 import 'package:intl/intl.dart';
@@ -177,10 +177,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     hintText: 'Enter phone number'),
               ),
               OutlinedButton(
-                  onPressed:(){
+                  onPressed: () {
                     image(true);
                   },
-                  child:const Text("Add Photo")),
+                  child: const Text("Add Photo")),
               const SizedBox(height: 3),
               OutlinedButton(
                 onPressed: () {
@@ -201,22 +201,23 @@ class _RegisterPageState extends State<RegisterPage> {
     try {
       var authenticate = Authenticate().authorize();
       UserCredential userCredential =
-      await authenticate.createUserWithEmailAndPassword(
-          email: _emailController.text, password: _passwordController.text);
+          await authenticate.createUserWithEmailAndPassword(
+              email: _emailController.text, password: _passwordController.text);
       _db
           .collection("user")
           .doc(userCredential.user!.uid)
           .set({
-        "first_name": _firstnameController.text,
-        "last_name": _lastnameController.text,
-        "phone": _phonenumberController.text,
-        "role": "customer",
-        "uid" : userCredential.user!.uid,
-        "register_date": DateTime.now()
-      })
+            "first_name": _firstnameController.text,
+            "last_name": _lastnameController.text,
+            "phone": _phonenumberController.text,
+            "role": "customer",
+            "uid": userCredential.user!.uid,
+            "register_date": DateTime.now()
+          })
           .then((value) => null)
           .onError((error, stackTrace) => null);
-      Navigator.pushReplacement(context,MaterialPageRoute(builder:  (con) => AppDriver()));
+      Navigator.pushReplacement(
+          context, MaterialPageRoute(builder: (con) => AppDriver()));
       // });
 
     } on FirebaseAuthException catch (e) {
@@ -232,13 +233,12 @@ class _RegisterPageState extends State<RegisterPage> {
   Future image(bool gallery) async {
     ImagePicker imagePicker = ImagePicker();
     XFile image;
-    if(gallery) {
+    if (gallery) {
       image = (await imagePicker.pickImage(
-          source: ImageSource.gallery,imageQuality: 50))!;
-    }
-    else{
+          source: ImageSource.gallery, imageQuality: 50))!;
+    } else {
       image = (await imagePicker.pickImage(
-          source: ImageSource.camera,imageQuality: 50))!;
+          source: ImageSource.camera, imageQuality: 50))!;
     }
     setState(() {
       _image = File(image.path);
@@ -249,18 +249,15 @@ class _RegisterPageState extends State<RegisterPage> {
     String id = Authenticate().user();
 
     var storage = FirebaseStorage.instance;
-    TaskSnapshot snapshot = await storage
-        .ref()
-        .child(id)
-        .putFile(_image!);
+    TaskSnapshot snapshot = await storage.ref().child(id).putFile(_image!);
     if (snapshot.state == TaskState.success) {
-      final String downloadUrl =
-      await snapshot.ref.getDownloadURL();
+      final String downloadUrl = await snapshot.ref.getDownloadURL();
       await FirebaseFirestore.instance
           .collection("user")
           .doc(id)
           .update({"url": downloadUrl});
     }
-    Navigator.pushReplacement(context,MaterialPageRoute(builder:  (con) => AppDriver()));
+    Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (con) => AppDriver()));
   }
 }
