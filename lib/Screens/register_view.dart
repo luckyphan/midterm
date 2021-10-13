@@ -212,17 +212,23 @@ class _RegisterPageState extends State<RegisterPage> {
             "phone": _phonenumberController.text,
             "role": "customer",
             "uid": userCredential.user!.uid,
-            "register_date": DateTime.now()
+            "register_date": DateTime.now(),
+            "age": ' ',
+            "bio": ' ',
+            "hometown": ' ',
+            "url": ' ',
           })
-          .then((value) => null)
+          .then((value) => addImage())
           .onError((error, stackTrace) => null);
       Navigator.pushReplacement(
           context, MaterialPageRoute(builder: (con) => AppDriver()));
       // });
 
     } on FirebaseAuthException catch (e) {
+      print("eee${e.message}");
+      String rr = e.message ?? " ";
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text("Error")));
+          .showSnackBar(SnackBar(content: Text(e.message ?? " ")));
     } catch (e) {
       print(e);
     }

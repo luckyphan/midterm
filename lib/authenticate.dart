@@ -8,6 +8,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class Authenticate {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -30,11 +31,10 @@ class Authenticate {
   }
 
   void anonSignIn(context) async {
-    _auth.signInAnonymously().then((result) {
+    await _auth.signInAnonymously().then((result) {
       final User? user = result.user;
-    });
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (con) => AppDriver()));
+    }).then((value) => Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (con) => AppDriver())));
   }
 
   void signInWithEmailAndPassword(_email, _password, context) async {
@@ -59,10 +59,12 @@ class Authenticate {
   }
 
   void signInOnlyEmail(_email) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString("mail", _email);
     await _auth.sendSignInLinkToEmail(
       email: _email,
       actionCodeSettings: ActionCodeSettings(
-          url: "https://fhossain6-midterm.firebaseapp.com",
+          url: "https://midterm1.page.link/29hQ",
           androidPackageName: "com.example.midterm",
           iOSBundleId: "com.example.midterm",
           handleCodeInApp: true,
@@ -89,11 +91,6 @@ class Authenticate {
   }
 
   Future<void> phoneSignIn(_phoneNumber, context) async {
-    PhoneVerificationCompleted verificationCompleted =
-        (PhoneAuthCredential phoneAuthCredential) async {
-      await _auth.signInWithCredential(phoneAuthCredential);
-    };
-
     PhoneVerificationFailed verificationFailed =
         (FirebaseAuthException authException) {
       print("Failed: $authException");
@@ -101,12 +98,23 @@ class Authenticate {
 
     PhoneCodeSent codeSent = (String verificationId, [int? resendToken]) async {
       _verificationId = verificationId;
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setString("verid", verificationId);
+      print("code sent");
     };
 
     await _auth.verifyPhoneNumber(
       phoneNumber: _phoneNumber,
       timeout: const Duration(seconds: 30),
-      verificationCompleted: verificationCompleted,
+      verificationCompleted: (AuthCredential credential) async {
+        UserCredential result = await _auth.signInWithCredential(credential);
+
+        User? user = result.user;
+
+        if (user != null) {
+          print(user.uid);
+        }
+      },
       verificationFailed: verificationFailed,
       codeSent: codeSent,
       codeAutoRetrievalTimeout: (String verificationId) {},
@@ -114,17 +122,16 @@ class Authenticate {
   }
 
   void signInPhone(_sms, context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
     try {
       final AuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId,
+        verificationId: await prefs.getString("verid")!,
         smsCode: _sms,
       );
       print(credential);
       final User? user = (await _auth.signInWithCredential(credential)).user;
-      Navigator.push(
-          context, MaterialPageRoute(builder: (context) => HomePage()));
     } catch (e) {
-      print(e);
+      print("rrr$e");
     }
     Navigator.push(
         context, MaterialPageRoute(builder: (context) => HomePage()));
@@ -149,17 +156,22 @@ class Authenticate {
         .get();
     final List<DocumentSnapshot> docs = result.docs;
     if (docs.isEmpty) {
+      print("empty");
       try {
         _db
             .collection("user")
             .doc()
             .set({
               "first_name": googleUser.displayName,
-              "last_name": '',
+              "last_name": "",
+              "phone": '',
               "role": 'customer',
               "url": '',
-              "uid": credential,
-              "registration_deadline": DateTime.now(),
+              "uid": googleUser.id,
+              "register_date": DateTime.now(),
+              "age": ' ',
+              "bio": ' ',
+              "hometown": ' ',
             })
             .then((value) => null)
             .onError((error, stackTrace) => null);
@@ -178,14 +190,56 @@ class Authenticate {
   }
 
   void facebookSignIn(context) async {
-    final LoginResult fbUser = await FacebookAuth.instance.login();
-    final AuthCredential facebookCredential =
-        FacebookAuthProvider.credential(fbUser.accessToken!.token);
+    try {
+      final LoginResult fbUser = await FacebookAuth.instance.login();
+      final AuthCredential facebookCredential =
+          FacebookAuthProvider.credential(fbUser.accessToken!.token);
 
-    final userCredential = await _auth.signInWithCredential(facebookCredential);
+      final userCredential =
+          await _auth.signInWithCredential(facebookCredential);
+      final User? user = userCredential.user;
 
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (con) => AppDriver()));
+      final QuerySnapshot result = await FirebaseFirestore.instance
+          .collection('user')
+          .where('first_name', isEqualTo: user!.displayName)
+          .limit(1)
+          .get();
+      final List<DocumentSnapshot> docs = result.docs;
+      if (docs.isEmpty) {
+        print("empty");
+        try {
+          _db
+              .collection("user")
+              .doc()
+              .set({
+                "first_name": user.displayName,
+                "last_name": "",
+                "phone": '',
+                "role": 'customer',
+                "url": user.photoURL,
+                "uid": user.uid,
+                "register_date": DateTime.now(),
+                "age": ' ',
+                "bio": ' ',
+                "hometown": ' ',
+              })
+              .then((value) => null)
+              .onError((error, stackTrace) => null);
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (con) => AppDriver()));
+        } on FirebaseAuthException catch (e) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(const SnackBar(content: Text("Error")));
+        } catch (e) {
+          print(e);
+        }
+      } else {
+        Navigator.pushReplacement(
+            context, MaterialPageRoute(builder: (con) => HomePage()));
+      }
+    } catch (e) {
+      print("rrr$e");
+    }
   }
 
   void signOut(BuildContext context) async {
@@ -199,6 +253,8 @@ class Authenticate {
               TextButton(
                 onPressed: () async {
                   await _auth.signOut();
+                  await GoogleSignIn().signOut();
+                  await FacebookAuth.instance.logOut();
                   ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('User logged out.')));
                   Navigator.pushReplacement(context,

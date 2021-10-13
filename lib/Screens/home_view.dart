@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../authenticate.dart';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -27,6 +28,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+          automaticallyImplyLeading: false,
           backgroundColor: Colors.lime.shade400,
           title: Text("Home Page"),
           actions: <Widget>[
@@ -46,6 +48,8 @@ class _HomePageState extends State<HomePage> {
           }
           return ListView(
             children: snapshot.data!.docs.map((document) {
+              DateTime dt = (document['register_date'] as Timestamp).toDate();
+              String dtt = DateFormat('dd/MM/yyyy, HH:mm').format(dt);
               return Container(
                 height: 60,
                 decoration: const BoxDecoration(
@@ -72,18 +76,28 @@ class _HomePageState extends State<HomePage> {
                         padding: EdgeInsets.all(7),
                       ),
                       Container(
-                        child: Text(document['register_date']),
+                        child: Text(dtt),
                         padding: EdgeInsets.all(2),
                       ),
                       Container(
                         child: RaisedButton.icon(
                             onPressed: () async {
                               setState(() {
-                                age = document['age'];
-                                bio = document['bio'];
-                                hometown = document['hometown'];
-                                name = document['first_name'];
-                                img = document['url'];
+                                age = document['age'] != null
+                                    ? document['age']
+                                    : "";
+                                bio = document['bio'] != null
+                                    ? document['bio']
+                                    : "";
+                                hometown = document['hometown'] != null
+                                    ? document['hometown']
+                                    : "";
+                                name = document['first_name'] != null
+                                    ? document['first_name']
+                                    : "";
+                                img = document['url'] != null
+                                    ? document['url']
+                                    : "";
                               });
                               Navigator.push(
                                   context,

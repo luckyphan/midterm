@@ -1,5 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
+import 'package:flutter/services.dart';
+import 'package:midterm/Screens/home_view.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../phone.dart';
 import '../authenticate.dart';
 import '../driver.dart';
@@ -14,21 +19,88 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginState();
 }
 
-class _LoginState extends State<LoginPage> {
+class _LoginState extends State<LoginPage> with WidgetsBindingObserver {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _emailController,
       _passwordController,
       _phoneNumberController;
 
+  late String _link;
+
   get model => null;
 
   @override
   void initState() {
+    WidgetsBinding.instance!.addObserver(this);
+
     super.initState();
+    this.initDynamicLinks();
+
     _emailController = TextEditingController();
     _passwordController = TextEditingController();
     _phoneNumberController = TextEditingController();
+  }
+
+  void initDynamicLinks() async {
+    FirebaseDynamicLinks.instance.onLink(
+        onSuccess: (PendingDynamicLinkData? dynamicLink) async {
+      final Uri? deepLink = dynamicLink?.link;
+
+      if (deepLink != null) {
+        print("dd${deepLink.toString()}");
+        _signInWithEmailAndLink(deepLink.toString());
+      }
+    }, onError: (OnLinkErrorException e) async {
+      print('onLinkError');
+      print(e.message);
+    });
+
+    final PendingDynamicLinkData? data =
+        await FirebaseDynamicLinks.instance.getInitialLink();
+    final Uri? deepLink = data?.link;
+
+    if (deepLink != null) {
+      setState(() {
+        print("dzzzd${deepLink.toString()}");
+
+        _link = deepLink.toString();
+
+        _signInWithEmailAndLink(deepLink.toString());
+      });
+      //  Navigator.pushNamed(context, deepLink.path);
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      initDynamicLinks();
+    }
+  }
+
+  Future<void> _signInWithEmailAndLink(String dd) async {
+    print("ddddddddd$dd ");
+
+    final FirebaseAuth user = FirebaseAuth.instance;
+    bool validLink = await user.isSignInWithEmailLink(dd);
+    if (validLink) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      String? mail = await prefs.getString("mail");
+      try {
+        print("link$dd ");
+        print("emzil$mail ");
+
+        final User =
+            await user.signInWithEmailLink(email: mail!, emailLink: dd);
+        if (User != null)
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => HomePage()));
+      } catch (e) {
+        print(e);
+        print(e.toString());
+      }
+    }
   }
 
   @override
@@ -170,32 +242,61 @@ class _LoginState extends State<LoginPage> {
           child: Text("Sign in Anonymously"),
         ));
 
-    return Scaffold(
-      backgroundColor: Colors.blue.shade100,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Form(
-              key: _formKey,
-              child: Column(
-                children: <Widget>[
-                  emailInput,
-                  passwordInput,
-                  submitButton,
-                  justEmail,
-                  phone,
-                  google,
-                  facebook,
-                  anon,
-                  registerButton,
-                ],
-              ),
+    return WillPopScope(
+        onWillPop: _onBackPressed,
+        child: Scaffold(
+          backgroundColor: Colors.blue.shade100,
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: <Widget>[
+                      emailInput,
+                      passwordInput,
+                      submitButton,
+                      justEmail,
+                      phone,
+                      google,
+                      facebook,
+                      anon,
+                      registerButton,
+                    ],
+                  ),
+                )
+              ],
+            ),
+          ),
+          // This trailing comma makes auto-formatting nicer for build methods.
+        ));
+  }
+
+  Future<bool> _onBackPressed() async {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Confirm'),
+          content: Text('Do you want to exit the App'),
+          actions: <Widget>[
+            FlatButton(
+              child: Text('No'),
+              onPressed: () {
+                Navigator.of(context).pop(false); //Will not exit the App
+              },
+            ),
+            FlatButton(
+              child: Text('Yes'),
+              onPressed: () {
+                SystemNavigator.pop(); //Will exit the App
+              },
             )
           ],
-        ),
-      ),
-      // This trailing comma makes auto-formatting nicer for build methods.
+        );
+      },
     );
+    return false;
   }
 }
